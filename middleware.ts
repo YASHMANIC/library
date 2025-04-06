@@ -9,5 +9,8 @@ export default withAuth({
 export const config = {
     matcher:[
         "/books/:path*",
+        "courses/:path*",
+        "otpPage/:path*",
+        "(course)/:path*",
     ]
 }
