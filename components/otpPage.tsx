@@ -30,7 +30,7 @@ const OtpInput: React.FC = () => {
   };
   // Handle OTP submission
   const handleSubmit = async() => {
-    if (otp.length !== 6) {
+    if (otp.length < 6 || otp.length > 6) {
       setIsOtpValid(false);
       return;
     }
@@ -46,17 +46,22 @@ const OtpInput: React.FC = () => {
           updateStatus(email);
           removeToken(email).then((res) => {
             if(res.success && !res.error){
-              router.push("/books")  
+              router.push("/sign-in")  
             }
           })
         }
       })
     })
   };
-
+  useEffect(() => {
+    if (otp.length === 6) {
+      handleSubmit();
+    }
+  }, [otp]);
   return (
     <div className="w-full max-w-sm mx-auto mt-20 p-6 border border-gray-300 rounded-xl shadow-lg">
       <h2 className="text-2xl font-semibold text-center mb-4">Enter OTP</h2>
+      <div className="text-md font-bold text-center mb-5">Otp Sent To Your Email</div>
       <div className="flex justify-center mb-4">
         {Array.from({ length: 6 }).map((_, index) => (
           <input
@@ -74,25 +79,26 @@ const OtpInput: React.FC = () => {
               const newOtp = otp.split("");
               newOtp[index] = e.target.value;
               setOtp(newOtp.join(""));
-            }}
+              if (e.target.value && index < inputRefs.current.length - 1) {
+                inputRefs.current[index + 1]?.focus();
+                }
+              }}
+              onKeyDown={(e) => {
+                // Handle backspace to move focus to the previous input field
+                if (e.key === "Backspace" && !otp[index] && index > 0) {
+                inputRefs.current[index - 1]?.focus();
+                }
+              }}
           />
         ))}
       </div>
       {!isOtpValid && <p className="text-red-500 text-sm text-center">OTP must be 6 digits.</p>}
       <FormError message={error}/>
       <FormSuccess message={success}/>
-      <button
-        onClick={handleSubmit}
-        className="w-full mt-4 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-        disabled={isPending}
-      >
-        Submit OTP
-      </button>
     </div>
   );
 };
 
 export default OtpInput;
-
 
 

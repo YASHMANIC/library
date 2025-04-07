@@ -42,53 +42,66 @@ const LoginForm = () => {
             password: "",
         }
     });
-    const onSubmit = (values:z.infer<typeof LoginSchema>) => {
+    const onSubmit = (values: z.infer<typeof LoginSchema>) => {
         setLoading(true)
         setError("");
         setSuccess("");
-        signIn('credentials',{
+        
+        signIn('credentials', {
             ...values,
-            redirect:false
+            redirect: false
         }).then((data) => {
-            if(data?.error){
+            if (data?.error) {
                 setError(data.error);
             }
-            if(data?.ok && !data?.error){
+            if (data?.ok && !data?.error) {
                 setEmail(values.email);
-                const check = checkStatus(values.email).then((data) => {
-                  if(data?.success && !data?.error) {
-                    toast.success("Successfully Logged In")
-                    setSuccess("Successfully Logged In")
-                    router.push("/books")
-                  }
-                  if(data?.error) {
-                    removeToken(values.email).then((data) => {
-                        if(data.success &&  !data.error) {
-                            setError(data.error);
-                            sendVerification(values.email,generateToken()).then((data) => {
-                                if(data?.error){
-                                    setError(data.error);
-                                }
-                                if(data?.success){
-                                    toast.success("Token Sent to your Mail");
-                                    router.push("/otpPage")
-                                }
-                            })
-                            
+                checkStatus(values.email)
+                    .then((data) => {
+                        if (data?.success && !data?.error) {
+                            setSuccess("Successfully Logged In")
+                            router.push("/books")
+                            toast.success("Successfully Logged In")
                         }
-                        else{
-                            setError(data.error);
-                            toast.error("Unable to send please try after some time");
+                        if (data?.error) {
+                            handleVerificationFlow(values.email);
                         }
                     })
-                    
-                  }
-                })
+                    .catch((err) => {
+                        setError("Network error occurred. Please try again.");
+                        toast.error("Connection failed. Please check your internet.");
+                    });
             }
-        }).finally(() => {
+        }).catch((err) => {
+            setError("Failed to connect to the server. Please try again.");
+            toast.error("Connection failed. Please check your internet.");
+        }).finally(async() => {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             form.reset()
             setLoading(false)
         })
+    }
+    
+    // Helper function to handle verification flow
+    const handleVerificationFlow = async (email: string) => {
+        try {
+            const removeTokenResult = await removeToken(email);
+            if (removeTokenResult.success && !removeTokenResult.error) {
+                const verificationResult = await sendVerification(email, generateToken());
+                if (verificationResult?.success) {
+                    toast.success("Token Sent to your Mail");
+                    router.push("/otpPage");
+                } else {
+                    setError(verificationResult?.error);
+                }
+            } else {
+                setError(removeTokenResult.error);
+                toast.error("Unable to send please try after some time");
+            }
+        } catch (error) {
+            setError("Verification process failed. Please try again.");
+            toast.error("Verification process failed");
+        }
     }
     return(
         <div className="mt-8 sm:w-full sm:max-w-md sm:mx-auto">
@@ -122,13 +135,13 @@ const LoginForm = () => {
                         <p className="text-center text-sm font-normal text-muted-foreground">{"Don't have a Account"}</p>
                     </Link>
                 </div>
-                         <Button disabled={loading} type={"submit"} className="w-full" size="icon" variant="default">
+                <FormError message={error}/>
+                <FormSuccess message={success}/>
+                <Button disabled={loading} type={"submit"} className="w-full" size="icon" variant="default">
                     LogIn
                 </Button>
                     </form>
                 </Form>
-                <FormError message={error}/>
-                <FormSuccess message={success}/>
             </div>
         </div>
     )

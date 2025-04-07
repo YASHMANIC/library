@@ -73,3 +73,11 @@ model Chapter {
 
   @@index([courseId])
 }
+
+model Generator{
+  id        String   @id @default(uuid())
+  email     String
+  prompt    String   @db.Text
+  response  String   @db.Text
+  createdAt DateTime @default(now())
+}
